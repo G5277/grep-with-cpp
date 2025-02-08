@@ -53,7 +53,6 @@ bool match_combinations(const std::string &input_line, const std::string &patter
         }
     }
 
-
     if (pattern.substr(0, 2) == "\\d")
     {
         bool check = match_digit(input_line.substr(0, 1));
@@ -93,6 +92,93 @@ bool match_combinations(const std::string &input_line, const std::string &patter
     return true;
 }
 
+// START OF STRING ANCHOR
+bool match_start_of_string(const std::string &input_line, const std::string &pattern)
+{
+    return pattern == input_line.substr(0, pattern.length());
+}
+
+// END OF STRING ANCHOR
+bool match_end_of_string(const std::string &input_line, const std::string &pattern)
+{
+    return pattern == input_line.substr(input_line.length() - pattern.length());
+}
+
+// ONE OR MORE QUANTIFIER
+bool match_one_or_more(const std::string &input_line, const std::string &pattern)
+{
+
+    size_t plus = pattern.find("+");
+
+    std::string left_pattern = pattern.substr(0, plus);
+    std::string right_pattern = pattern.substr(plus + 1);
+    char repeat_char = pattern[plus - 1];
+
+    size_t left = input_line.find(left_pattern);
+    size_t right = input_line.find(right_pattern, left + 1);
+
+    if (left == std::string::npos || right == std::string::npos || right <= left)
+    {
+        return false;
+    }
+
+    for (size_t i = left + left_pattern.length(); i < right; i++)
+    {
+        if (input_line[i] != repeat_char)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// ZERO OR MORE QUANTIFIER
+bool match_zero_or_more(const std::string &input_line, const std::string &pattern)
+{
+
+    size_t ques = pattern.find("?");
+
+    std::string left_pattern = pattern.substr(0, ques - 1);
+    std::string right_pattern = pattern.substr(ques + 1);
+    char repeat_char = pattern[ques - 1];
+
+    size_t left = input_line.find(left_pattern);
+    size_t right = input_line.find(right_pattern, left + 1);
+
+    if (left == std::string::npos || right == std::string::npos || right <= left)
+    {
+        return false;
+    }
+
+    for (size_t i = left + left_pattern.length(); i < right; i++)
+    {
+        if (input_line[i] != repeat_char)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+// WILDCARD
+bool match_wildcard(const std::string &input_line, const std::string &pattern)
+{
+    size_t ques = pattern.find(".");
+
+    std::string left_pattern = pattern.substr(0, ques - 1);
+    std::string right_pattern = pattern.substr(ques + 1);
+
+    size_t left = input_line.find(left_pattern);
+    size_t right = input_line.find(right_pattern, left + 1);
+
+    if (left == std::string::npos || right == std::string::npos || right <= left)
+    {
+        return false;
+    }
+    return true;
+
+}
 // COMPLETE
 bool match_pattern(const std::string &input_line, const std::string &pattern)
 {
@@ -108,6 +194,19 @@ bool match_pattern(const std::string &input_line, const std::string &pattern)
     {
         return match_alphanumeric(input_line);
     }
+    else if (pattern.find("+") != std::string::npos)
+    {
+        return match_one_or_more(input_line, pattern);
+    }
+    else if (pattern.find(".") != std::string::npos)
+    {
+        return match_wildcard(input_line, pattern);
+    }
+
+    else if (pattern.find("?") != std::string::npos)
+    {
+        return match_zero_or_more(input_line, pattern);
+    }
     else if (pattern[0] == '[' && pattern[pattern.length() - 1] == ']')
     {
         if (pattern[1] == '^')
@@ -120,10 +219,19 @@ bool match_pattern(const std::string &input_line, const std::string &pattern)
     {
         return match_combinations(input_line, pattern.substr(1, pattern.length() - 1));
     }
+    else if (pattern[0] == '^')
+    {
+        return match_start_of_string(input_line, pattern.substr(1));
+    }
+    else if (pattern[pattern.length() - 1] == '$')
+    {
+        return match_end_of_string(input_line, pattern.substr(0, pattern.length() - 1));
+    }
     else
     {
         throw std::runtime_error("Unhandled pattern " + pattern);
     }
+    return true;
 }
 
 int main(int argc, char **argv)
