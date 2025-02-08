@@ -1,0 +1,65 @@
+#include <iostream>
+#include <regex>
+#include <stdexcept>
+
+bool match_literal(const std::string &input_line, const std::string &pattern) {
+    return input_line.find(pattern) != std::string::npos;
+}
+
+bool match_digit(const std::string &input_line) {
+    return std::regex_search(input_line, std::regex("\\d"));
+}
+
+bool match_alphanumeric(const std::string &input_line) {
+    return std::regex_search(input_line, std::regex("\\w"));
+}
+
+bool match_pos_char_grp(const std::string &input_line, const std::string &pattern) {
+    return input_line.find_first_of(pattern) != std::string::npos;
+}
+
+bool match_neg_char_grp(const std::string &input_line, const std::string &pattern) {
+    return input_line.find_first_not_of(pattern) != std::string::npos;
+}
+
+bool match_combinations(const std::string &input_line, const std::string &pattern) {
+    for (char c : pattern) {
+        if (input_line.find(c) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool match_pattern(const std::string &input_line, const std::string &pattern) {
+    if (pattern == "\\d") {
+        return match_digit(input_line);
+    } else if (pattern == "\\w") {
+        return match_alphanumeric(input_line);
+    } else if (pattern[0] == '[' && pattern.back() == ']') {
+        if (pattern[1] == '^') {
+            return match_neg_char_grp(input_line, pattern.substr(2, pattern.length() - 3));
+        }
+        return match_pos_char_grp(input_line, pattern.substr(1, pattern.length() - 2));
+    } else if (pattern[0] == '(' && pattern.back() == ')') {
+        return match_combinations(input_line, pattern.substr(1, pattern.length() - 2));
+    } else {
+        return match_literal(input_line, pattern);
+    }
+}
+
+int main() {
+    std::string input_line, pattern;
+    std::cout << "Enter input string: ";
+    std::getline(std::cin, input_line);
+    std::cout << "Enter pattern: ";
+    std::getline(std::cin, pattern);
+    
+    if (match_pattern(input_line, pattern)) {
+        std::cout << "Pattern Matched!" << std::endl;
+    } else {
+        std::cout << "No Match." << std::endl;
+    }
+    
+    return 0;
+}
